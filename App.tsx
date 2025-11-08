@@ -3,11 +3,16 @@ import Sidebar from './components/Sidebar';
 import AnalyzeView from './components/AnalyzeView';
 import DiscoverView from './components/DiscoverView';
 import ComposerView from './components/ComposerView';
+import LoginView from './components/LoginView';
+import RegisterView from './components/RegisterView';
+import { useAuth } from './contexts/AuthContext';
 import { ViewMode, Theme, UserDrivenResponse, ProactiveDiscoveryResponse, FounderProfile } from './types';
 
 const App: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+  const [authView, setAuthView] = useState<'login' | 'register'>('login');
   const [viewMode, setViewMode] = useState<ViewMode>('analyze');
-  const [theme, setTheme] = useState<Theme>('light'); // Default to light mode
+  const [theme, setTheme] = useState<Theme>('light');
   const [founderProfile, setFounderProfile] = useState<FounderProfile>({
     experience_years: 0,
     team_size: 1,
@@ -64,6 +69,18 @@ const App: React.FC = () => {
         return <AnalyzeView setResponse={setAnalysisResponse} initialProblem={selectedProblem} onProblemProcessed={() => setSelectedProblem(null)} profile={founderProfile} setProfile={setFounderProfile} theme={theme} />;
     }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className={theme === 'dark' ? 'dark' : ''}>
+        {authView === 'login' ? (
+          <LoginView onSwitchToRegister={() => setAuthView('register')} />
+        ) : (
+          <RegisterView onSwitchToLogin={() => setAuthView('login')} />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col md:flex-row h-screen text-black dark:text-white font-sans antialiased bg-white dark:bg-black">
