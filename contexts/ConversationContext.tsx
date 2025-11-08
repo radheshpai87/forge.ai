@@ -19,8 +19,8 @@ export interface Conversation {
 interface ConversationContextType {
   conversations: Conversation[];
   currentConversation: Conversation | null;
-  addMessage: (role: 'user' | 'assistant', content: string) => Promise<void>;
-  createNewConversation: () => Promise<void>;
+  addMessage: (role: 'user' | 'assistant', content: string, conversationId?: string) => Promise<void>;
+  createNewConversation: () => Promise<Conversation | null>;
   switchConversation: (conversationId: string) => void;
   deleteConversation: (conversationId: string) => Promise<void>;
   clearCurrentConversation: () => Promise<void>;
@@ -74,29 +74,35 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
     loadConversations();
   }, [user?.id]);
 
-  const createNewConversation = async () => {
+  const createNewConversation = async (): Promise<Conversation | null> => {
     try {
       const newConversation = await conversationAPI.createConversation('New Conversation');
       setConversations(prev => [newConversation, ...prev]);
       setCurrentConversation(newConversation);
+      return newConversation;
     } catch (error) {
       console.error('Failed to create conversation:', error);
+      return null;
     }
   };
 
-  const addMessage = async (role: 'user' | 'assistant', content: string) => {
-    if (!currentConversation) return;
+  const addMessage = async (role: 'user' | 'assistant', content: string, conversationId?: string) => {
+    const targetConversation = conversationId 
+      ? conversations.find(c => c.id === conversationId) || currentConversation
+      : currentConversation;
+      
+    if (!targetConversation) return;
 
     try {
-      const newMessage = await conversationAPI.addMessage(currentConversation.id, role, content);
+      const newMessage = await conversationAPI.addMessage(targetConversation.id, role, content);
 
-      const updatedTitle = currentConversation.messages.length === 0 && role === 'user' 
+      const updatedTitle = targetConversation.messages.length === 0 && role === 'user' 
         ? content.slice(0, 50) + (content.length > 50 ? '...' : '')
-        : currentConversation.title;
+        : targetConversation.title;
 
       const updatedConversation = {
-        ...currentConversation,
-        messages: [...currentConversation.messages, newMessage],
+        ...targetConversation,
+        messages: [...targetConversation.messages, newMessage],
         title: updatedTitle,
       };
 
