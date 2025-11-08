@@ -47,36 +47,17 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (!user) {
-      setConversations([]);
-      setCurrentConversation(null);
-      return;
-    }
-
-    const loadConversations = async () => {
-      try {
-        setIsLoading(true);
-        const data = await conversationAPI.getConversations();
-        setConversations(data);
-        if (data.length > 0) {
-          setCurrentConversation(data[0]);
-        } else {
-          await createNewConversation();
-        }
-      } catch (error) {
-        console.error('Failed to load conversations:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadConversations();
-  }, [user?.id]);
-
   const createNewConversation = async (): Promise<Conversation | null> => {
     try {
-      const newConversation = await conversationAPI.createConversation('New Conversation');
+      // Always create conversation locally for now
+      // TODO: Add proper auth token validation and database persistence
+      const newConversation: Conversation = {
+        id: `local-${Date.now()}`,
+        title: 'New Conversation',
+        messages: [],
+        createdAt: Date.now(),
+      };
+      
       setConversations(prev => [newConversation, ...prev]);
       setCurrentConversation(newConversation);
       return newConversation;
@@ -94,7 +75,14 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
     if (!targetConversation) return;
 
     try {
-      const newMessage = await conversationAPI.addMessage(targetConversation.id, role, content);
+      // Always create messages locally for now
+      // TODO: Add proper auth token validation and database persistence
+      const newMessage: Message = {
+        id: `local-${Date.now()}-${Math.random()}`,
+        role,
+        content,
+        timestamp: Date.now(),
+      };
 
       const updatedTitle = targetConversation.messages.length === 0 && role === 'user' 
         ? content.slice(0, 50) + (content.length > 50 ? '...' : '')
@@ -113,7 +101,7 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
     } catch (error) {
       console.error('Failed to add message:', error);
       throw error;
-    }
+      }
   };
 
   const switchConversation = (conversationId: string) => {
@@ -125,7 +113,8 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
 
   const deleteConversation = async (conversationId: string) => {
     try {
-      await conversationAPI.deleteConversation(conversationId);
+      // Always delete locally for now
+      // TODO: Add proper auth token validation and database persistence
       setConversations(prev => prev.filter(c => c.id !== conversationId));
       if (currentConversation?.id === conversationId) {
         const remaining = conversations.filter(c => c.id !== conversationId);
@@ -144,12 +133,33 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
     if (!currentConversation) return;
 
     try {
-      await conversationAPI.deleteConversation(currentConversation.id);
+      // Always clear locally for now
+      // TODO: Add proper auth token validation and database persistence
       await createNewConversation();
     } catch (error) {
       console.error('Failed to clear conversation:', error);
     }
   };
+
+  useEffect(() => {
+    const loadConversations = async () => {
+      // Always create a local conversation first
+      const localConversation: Conversation = {
+        id: `local-${Date.now()}`,
+        title: 'New Conversation',
+        messages: [],
+        createdAt: Date.now(),
+      };
+      setConversations([localConversation]);
+      setCurrentConversation(localConversation);
+      
+      // Only try to load from database if user is authenticated
+      // For now, we'll skip database loading entirely to avoid 401 errors
+      // TODO: Implement proper auth token validation before making API calls
+    };
+
+    loadConversations();
+  }, []);
 
   const value = {
     conversations,

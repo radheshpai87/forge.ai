@@ -20,6 +20,11 @@ function generateSessionToken(): string {
 
 app.post('/api/auth/register', async (req: Request, res: Response): Promise<void> => {
   try {
+    if (!db) {
+      res.status(503).json({ error: 'Database not configured. Authentication disabled for development.' });
+      return;
+    }
+
     const { email, password, name } = req.body;
 
     if (!email || !password || !name) {
@@ -55,6 +60,11 @@ app.post('/api/auth/register', async (req: Request, res: Response): Promise<void
 
 app.post('/api/auth/login', async (req: Request, res: Response): Promise<void> => {
   try {
+    if (!db) {
+      res.status(503).json({ error: 'Database not configured. Authentication disabled for development.' });
+      return;
+    }
+
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -97,6 +107,11 @@ app.post('/api/auth/logout', (req: Request, res: Response): void => {
 
 app.get('/api/conversations', async (req: Request, res: Response): Promise<void> => {
   try {
+    if (!db) {
+      res.status(503).json({ error: 'Database not configured' });
+      return;
+    }
+
     const token = req.headers.authorization?.replace('Bearer ', '');
     const userId = token ? sessions.get(token) : undefined;
 
@@ -142,6 +157,11 @@ app.get('/api/conversations', async (req: Request, res: Response): Promise<void>
 
 app.post('/api/conversations', async (req: Request, res: Response): Promise<void> => {
   try {
+    if (!db) {
+      res.status(503).json({ error: 'Database not configured' });
+      return;
+    }
+
     const token = req.headers.authorization?.replace('Bearer ', '');
     const userId = token ? sessions.get(token) : undefined;
 
@@ -171,6 +191,11 @@ app.post('/api/conversations', async (req: Request, res: Response): Promise<void
 
 app.post('/api/conversations/:id/messages', async (req: Request, res: Response): Promise<void> => {
   try {
+    if (!db) {
+      res.status(503).json({ error: 'Database not configured' });
+      return;
+    }
+
     const token = req.headers.authorization?.replace('Bearer ', '');
     const userId = token ? sessions.get(token) : undefined;
 
@@ -218,6 +243,11 @@ app.post('/api/conversations/:id/messages', async (req: Request, res: Response):
 
 app.delete('/api/conversations/:id', async (req: Request, res: Response): Promise<void> => {
   try {
+    if (!db) {
+      res.status(503).json({ error: 'Database not configured' });
+      return;
+    }
+
     const token = req.headers.authorization?.replace('Bearer ', '');
     const userId = token ? sessions.get(token) : undefined;
 
@@ -241,4 +271,9 @@ app.delete('/api/conversations/:id', async (req: Request, res: Response): Promis
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  if (!db) {
+    console.log('⚠️  Database not configured - Authentication features disabled');
+    console.log('   Main features (Analyze, Discover, Compose) will work without database');
+    console.log('   To enable authentication, set DATABASE_URL in .env.local');
+  }
 });
