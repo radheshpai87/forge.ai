@@ -44,13 +44,13 @@ const App: React.FC = () => {
   const renderView = () => {
     switch (viewMode) {
       case 'analyze':
-        return <AnalyzeView setResponse={setAnalysisResponse} initialProblem={selectedProblem} onProblemProcessed={() => setSelectedProblem(null)} />;
+        return <AnalyzeView setResponse={setAnalysisResponse} initialProblem={selectedProblem} onProblemProcessed={() => setSelectedProblem(null)} theme={theme} />;
       case 'discover':
         return <DiscoverView setResponse={setDiscoveryResponse} onProblemSelect={handleProblemSelect} />;
       case 'compose':
         return <ComposerView analysis={analysisResponse} opportunities={discoveryResponse?.problems || []} />;
       default:
-        return <AnalyzeView setResponse={setAnalysisResponse} initialProblem={selectedProblem} onProblemProcessed={() => setSelectedProblem(null)} />;
+        return <AnalyzeView setResponse={setAnalysisResponse} initialProblem={selectedProblem} onProblemProcessed={() => setSelectedProblem(null)} theme={theme} />;
     }
   };
 
