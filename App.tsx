@@ -7,7 +7,9 @@ import { ViewMode, Theme, UserDrivenResponse, ProactiveDiscoveryResponse } from 
 
 const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('analyze');
-  const [theme, setTheme] = useState<Theme>('dark');
+  const [theme, setTheme] = useState<Theme>(() =>
+    window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  );
   const [analysisResponse, setAnalysisResponse] = useState<UserDrivenResponse | null>(null);
   const [discoveryResponse, setDiscoveryResponse] = useState<ProactiveDiscoveryResponse | null>(null);
   const [selectedProblem, setSelectedProblem] = useState<string | null>(null);
@@ -56,9 +58,9 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen text-black dark:text-white font-sans antialiased bg-white dark:bg-black">
-      <Sidebar 
-        activeMode={viewMode} 
-        onModeChange={handleViewChange} 
+      <Sidebar
+        activeMode={viewMode}
+        onModeChange={handleViewChange}
         theme={theme}
         onThemeChange={handleThemeChange}
         isComposerEnabled={!!analysisResponse}
