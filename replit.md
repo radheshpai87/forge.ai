@@ -41,6 +41,14 @@ Forge AI is a personalized AI co-pilot for startup founders and innovators. It u
 - Host: 0.0.0.0 (configured for Replit environment)
 - Allowed Hosts: Enabled for Replit proxy
 
+## Database Setup
+Forge AI now uses a PostgreSQL database for secure, persistent data storage:
+- **Users**: Stores user accounts with encrypted passwords (bcrypt)
+- **Conversations**: Stores chat conversations with timestamps
+- **Messages**: Stores individual messages within conversations
+
+Backend API runs on port 3001, frontend on port 5000.
+
 ## Recent Changes (November 08, 2025)
 - Imported from GitHub
 - Updated Vite config to use port 5000 (Replit requirement)
@@ -64,6 +72,14 @@ Forge AI is a personalized AI co-pilot for startup founders and innovators. It u
   - Features: New chat, clear conversation, message history with markdown support
   - AI remembers all previous messages in the conversation for context
   - Chat set as default view for new users
+- Migrated to PostgreSQL database backend:
+  - Created database schema with Drizzle ORM (users, conversations, messages tables)
+  - Built Express API server with authentication and conversation endpoints
+  - Updated AuthContext to use API instead of localStorage
+  - Updated ConversationContext to use API instead of localStorage
+  - Added bcrypt password hashing for security
+  - Session-based authentication with tokens
+  - Data now persists in database instead of browser storage
 
 ## Running the Project
 The project runs automatically via the configured workflow using `npm run dev`. The application is accessible through the Replit webview on port 5000.

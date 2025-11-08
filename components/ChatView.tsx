@@ -28,18 +28,21 @@ const ChatView: React.FC = () => {
     setInput('');
     setIsLoading(true);
 
-    addMessage('user', userMessage);
-
     try {
-      const history: GeminiChatMessage[] = currentConversation?.messages.map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: msg.content
-      })) || [];
+      await addMessage('user', userMessage);
+
+      const history: GeminiChatMessage[] = [
+        ...(currentConversation?.messages.map(msg => ({
+          role: msg.role === 'user' ? ('user' as const) : ('model' as const),
+          parts: msg.content
+        })) || []),
+        { role: 'user' as const, parts: userMessage }
+      ];
 
       const response = await chat(userMessage, history);
-      addMessage('assistant', response);
+      await addMessage('assistant', response);
     } catch (error: any) {
-      addMessage('assistant', `Sorry, I encountered an error: ${error.message}`);
+      await addMessage('assistant', `Sorry, I encountered an error: ${error.message}`);
     } finally {
       setIsLoading(false);
       inputRef.current?.focus();

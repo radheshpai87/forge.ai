@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "tsx server/index.ts & vite",
+    "server": "tsx server/index.ts",
+    "client": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "db:push": "drizzle-kit push"
@@ -25,7 +27,8 @@
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
     "reactflow": "^11.11.4",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "tsx": "^4.20.6"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
