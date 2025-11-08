@@ -14,22 +14,28 @@ Forge AI is a personalized AI co-pilot for startup founders and innovators. It u
 
 ### Key Features
 1. **Authentication**: User registration and login with secure session management
-2. **Chat**: Conversational AI interface with memory - remembers entire conversation history like ChatGPT
-3. **Analyze**: User-driven problem analysis with competitive landscape, feasibility assessment, and market insights
-4. **Discover**: Proactive opportunity scanner that finds emerging problems in specified sectors
-5. **Compose**: AI-powered strategy synthesis that creates actionable plans
+2. **Analyze**: Integrated chat and analysis view with:
+   - Conversational AI interface with full conversation memory
+   - History tab to browse and switch between past conversations
+   - AI remembers entire conversation context like ChatGPT
+   - Persistent conversations stored in PostgreSQL database
+3. **Discover**: Proactive opportunity scanner that finds emerging problems in specified sectors
+4. **Compose**: AI-powered strategy synthesis that creates actionable plans
 
 ### Project Structure
 - `components/` - React components including views, forms, and UI elements
   - `LoginView.tsx` - User login form
   - `RegisterView.tsx` - User registration form
-  - `ChatView.tsx` - Conversational AI chat interface
+  - `AnalyzeView.tsx` - Integrated chat and analysis interface with conversation history
 - `contexts/` - React context providers
   - `AuthContext.tsx` - Authentication state management
   - `ConversationContext.tsx` - Conversation history and memory management
 - `services/geminiService.ts` - Core AI logic and Gemini API integration (includes chat function)
+- `services/apiService.ts` - Backend API client with authentication and conversation endpoints
+- `server/index.ts` - Express backend server (port 3001)
+- `shared/schema.ts` - Database schema definitions using Drizzle ORM
 - `types.ts` - TypeScript type definitions
-- `vite.config.ts` - Vite configuration (port 5000, allowedHosts enabled)
+- `vite.config.ts` - Vite configuration (port 5000, proxy for /api requests)
 
 ## Configuration
 
@@ -62,16 +68,7 @@ Backend API runs on port 3001, frontend on port 5000.
   - Integrated dark mode toggle on login/register pages
   - Added user info display and logout in Sidebar
   - Protected routes - users must authenticate before accessing main features
-  - User data stored in browser localStorage
   - Consistent styling with grid background and gradient effects
-- Implemented conversation memory feature (like ChatGPT):
-  - Created ConversationContext to manage chat history
-  - Built ChatView component with conversational interface
-  - Added chat function to geminiService that includes conversation history
-  - Conversations persist across sessions (stored in localStorage per user)
-  - Features: New chat, clear conversation, message history with markdown support
-  - AI remembers all previous messages in the conversation for context
-  - Chat set as default view for new users
 - Migrated to PostgreSQL database backend:
   - Created database schema with Drizzle ORM (users, conversations, messages tables)
   - Built Express API server with authentication and conversation endpoints
@@ -80,6 +77,15 @@ Backend API runs on port 3001, frontend on port 5000.
   - Added bcrypt password hashing for security
   - Session-based authentication with tokens
   - Data now persists in database instead of browser storage
+  - Fixed Vite proxy configuration to forward /api requests to backend (port 3001)
+- Integrated chat into Analyze view:
+  - Removed separate Chat view from navigation
+  - Added tabbed interface to AnalyzeView (Analyze tab and History tab)
+  - Analyze tab: Full conversational AI interface with ChatGPT-like memory
+  - History tab: Browse all past conversations and switch between them
+  - Set Analyze as default view on login
+  - Conversations persist in PostgreSQL with full message history
+  - Features: New chat, clear conversation, switch conversations from history
 
 ## Running the Project
 The project runs automatically via the configured workflow using `npm run dev`. The application is accessible through the Replit webview on port 5000.
