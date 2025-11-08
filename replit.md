@@ -14,17 +14,20 @@ Forge AI is a personalized AI co-pilot for startup founders and innovators. It u
 
 ### Key Features
 1. **Authentication**: User registration and login with secure session management
-2. **Analyze**: User-driven problem analysis with competitive landscape, feasibility assessment, and market insights
-3. **Discover**: Proactive opportunity scanner that finds emerging problems in specified sectors
-4. **Compose**: AI-powered strategy synthesis that creates actionable plans
+2. **Chat**: Conversational AI interface with memory - remembers entire conversation history like ChatGPT
+3. **Analyze**: User-driven problem analysis with competitive landscape, feasibility assessment, and market insights
+4. **Discover**: Proactive opportunity scanner that finds emerging problems in specified sectors
+5. **Compose**: AI-powered strategy synthesis that creates actionable plans
 
 ### Project Structure
 - `components/` - React components including views, forms, and UI elements
   - `LoginView.tsx` - User login form
   - `RegisterView.tsx` - User registration form
+  - `ChatView.tsx` - Conversational AI chat interface
 - `contexts/` - React context providers
   - `AuthContext.tsx` - Authentication state management
-- `services/geminiService.ts` - Core AI logic and Gemini API integration
+  - `ConversationContext.tsx` - Conversation history and memory management
+- `services/geminiService.ts` - Core AI logic and Gemini API integration (includes chat function)
 - `types.ts` - TypeScript type definitions
 - `vite.config.ts` - Vite configuration (port 5000, allowedHosts enabled)
 
@@ -53,6 +56,14 @@ Forge AI is a personalized AI co-pilot for startup founders and innovators. It u
   - Protected routes - users must authenticate before accessing main features
   - User data stored in browser localStorage
   - Consistent styling with grid background and gradient effects
+- Implemented conversation memory feature (like ChatGPT):
+  - Created ConversationContext to manage chat history
+  - Built ChatView component with conversational interface
+  - Added chat function to geminiService that includes conversation history
+  - Conversations persist across sessions (stored in localStorage per user)
+  - Features: New chat, clear conversation, message history with markdown support
+  - AI remembers all previous messages in the conversation for context
+  - Chat set as default view for new users
 
 ## Running the Project
 The project runs automatically via the configured workflow using `npm run dev`. The application is accessible through the Replit webview on port 5000.
