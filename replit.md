@@ -57,7 +57,24 @@ Forge AI now uses a PostgreSQL database for secure, persistent data storage:
 
 Backend API runs on port 3001, frontend on port 5000.
 
-## Recent Changes (November 08, 2025)
+## Recent Changes
+
+### November 09, 2025 - Chat History Complete Rebuild
+- **Completely rebuilt conversation management system from scratch**:
+  - Eliminated all async/promise patterns for deterministic, synchronous state management
+  - Removed React Strict Mode workarounds (refs, timeouts, duplicate guards)
+  - Fixed critical bug where chat follow-ups were missing the latest user message
+  - Fixed bug where analysis messages were added to wrong conversations
+  - New clean API: `createConversation()`, `addMessage()`, `switchConversation()`, `deleteConversation()`
+- **Key improvements**:
+  - `createConversation()` and `addMessage()` now return updated conversations immediately (synchronous access)
+  - `addMessage()` accepts optional `targetConversation` parameter for explicit targeting
+  - Always updates `currentConversation` to keep UI state in sync
+  - No more race conditions or stale closure bugs
+  - Sidebar filters to show only conversations with messages (no empty "New Conversation" clutter)
+- **Architecture verified**: Complete rebuild reviewed and approved by architect - production ready
+
+### November 08, 2025
 - Imported from GitHub
 - Updated Vite config to use port 5000 (Replit requirement)
 - Added `allowedHosts: true` to Vite config for Replit proxy compatibility
