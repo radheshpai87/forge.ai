@@ -63,6 +63,7 @@ const AnalyzeView: React.FC<AnalyzeViewProps> = ({ setResponse, initialProblem, 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const processedSignatureRef = useRef<string | null>(null);
+  const previousConversationIdRef = useRef<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -84,13 +85,20 @@ const AnalyzeView: React.FC<AnalyzeViewProps> = ({ setResponse, initialProblem, 
   }, [currentConversation?.id]);
 
   // Clear currentResponse when switching to a fresh, empty conversation
+  // But NOT when we're in the middle of an analysis (isLoading)
   useEffect(() => {
     if (currentConversation && currentConversation.messages.length === 0) {
-      setCurrentResponse(null);
-      setUserInput('');
-      setError(null);
+      // Only clear if we're NOT currently loading (which means we're doing an analysis)
+      // and the conversation actually changed
+      const conversationChanged = previousConversationIdRef.current !== currentConversation.id;
+      if (!isLoading && conversationChanged) {
+        setCurrentResponse(null);
+        setUserInput('');
+        setError(null);
+      }
+      previousConversationIdRef.current = currentConversation.id;
     }
-  }, [currentConversation?.id]);
+  }, [currentConversation?.id, isLoading]);
 
   const seedChatWithAnalysis = useCallback(async (problem: string, analysis: UserDrivenResponse) => {
     const newConv = await createNewConversation();
