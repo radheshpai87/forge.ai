@@ -17,7 +17,7 @@ export interface Conversation {
 interface ConversationContextType {
   conversations: Conversation[];
   currentConversation: Conversation | null;
-  addMessage: (role: 'user' | 'assistant', content: string) => Conversation;
+  addMessage: (role: 'user' | 'assistant', content: string, targetConversation?: Conversation) => Conversation;
   createConversation: () => Conversation;
   switchConversation: (conversationId: string) => void;
   deleteConversation: (conversationId: string) => void;
@@ -74,11 +74,14 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
     return newConversation;
   }, [conversations]);
 
-  // Add a message to the current conversation and return the updated conversation
-  const addMessage = useCallback((role: 'user' | 'assistant', content: string) => {
-    if (!currentConversation) {
-      console.error('No current conversation to add message to');
-      throw new Error('No current conversation available');
+  // Add a message to a specific conversation (or current if not specified) and return the updated conversation
+  const addMessage = useCallback((role: 'user' | 'assistant', content: string, targetConversation?: Conversation) => {
+    // Use provided conversation or fall back to currentConversation
+    const conversationToUpdate = targetConversation || currentConversation;
+    
+    if (!conversationToUpdate) {
+      console.error('No conversation to add message to');
+      throw new Error('No conversation available');
     }
 
     const newMessage: Message = {
@@ -90,21 +93,23 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
 
     // Update the conversation with the new message
     const updatedConversation: Conversation = {
-      ...currentConversation,
-      messages: [...currentConversation.messages, newMessage],
+      ...conversationToUpdate,
+      messages: [...conversationToUpdate.messages, newMessage],
       // Update title based on first user message
-      title: currentConversation.messages.length === 0 && role === 'user'
+      title: conversationToUpdate.messages.length === 0 && role === 'user'
         ? content.slice(0, 50) + (content.length > 50 ? '...' : '')
-        : currentConversation.title,
+        : conversationToUpdate.title,
     };
 
     // Update conversations list
     setConversations(prev => 
-      prev.map(c => c.id === currentConversation.id ? updatedConversation : c)
+      prev.map(c => c.id === conversationToUpdate.id ? updatedConversation : c)
     );
 
-    // Update current conversation
-    setCurrentConversation(updatedConversation);
+    // Update current conversation if we modified it
+    if (!targetConversation || conversationToUpdate.id === currentConversation?.id) {
+      setCurrentConversation(updatedConversation);
+    }
     
     // Return the updated conversation immediately for synchronous access
     return updatedConversation;

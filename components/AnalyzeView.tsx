@@ -111,12 +111,9 @@ const AnalyzeView: React.FC<AnalyzeViewProps> = ({ setResponse, initialProblem, 
       `### ${chunk.title}\n${chunk.analysis}\n\n**Key Insights:**\n${chunk.key_insights.map(insight => `- ${insight}`).join('\n')}`
     ).join('\n\n')}\n\n## Solution Guide\n${analysis.synthesis.solution_guide.map((step, idx) => `${idx + 1}. ${step}`).join('\n')}`;
     
-    // Add user message with the problem - get updated conversation back
-    const convWithUserMsg = addMessage('user', problem);
-    
-    // Add assistant message with the analysis using the updated conversation
-    // This ensures we're working with the latest state
-    addMessage('assistant', analysisText);
+    // Add messages to the target conversation (critical: pass targetConv explicitly)
+    const convWithUserMsg = addMessage('user', problem, targetConv);
+    const convWithBothMessages = addMessage('assistant', analysisText, convWithUserMsg);
   }, [currentConversation, createConversation, addMessage]);
 
   React.useEffect(() => {
