@@ -6,10 +6,12 @@ import ComposerView from './components/ComposerView';
 import LoginView from './components/LoginView';
 import RegisterView from './components/RegisterView';
 import { useAuth } from './contexts/AuthContext';
+import { useConversation } from './contexts/ConversationContext';
 import { ViewMode, Theme, UserDrivenResponse, ProactiveDiscoveryResponse, FounderProfile } from './types';
 
 const App: React.FC = () => {
   const { isAuthenticated } = useAuth();
+  const { startFreshConversation } = useConversation();
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
   const [viewMode, setViewMode] = useState<ViewMode>('analyze');
   const [theme, setTheme] = useState<Theme>('light');
@@ -53,6 +55,18 @@ const App: React.FC = () => {
     setViewMode('analyze');
   }, []);
 
+  const handleNewConversation = useCallback(async () => {
+    // Reset all analysis state first
+    setAnalysisResponse(null);
+    setSelectedProblem(null);
+    
+    // Then create a new conversation
+    await startFreshConversation();
+    
+    // Switch to analyze mode
+    setViewMode('analyze');
+  }, [startFreshConversation]);
+
   const renderView = () => {
     switch (viewMode) {
       case 'analyze':
@@ -94,6 +108,7 @@ const App: React.FC = () => {
         theme={theme}
         onThemeChange={handleThemeChange}
         isComposerEnabled={!!analysisResponse}
+        onNewConversation={handleNewConversation}
       />
 
       {/* This is now your scrolling content area */}
