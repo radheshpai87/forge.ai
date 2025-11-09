@@ -70,6 +70,10 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
 
   const startFreshConversation = async (): Promise<Conversation | null> => {
     // This is specifically for the "New Conversation" button - creates a truly fresh conversation
+    // First, remove any existing empty conversations to avoid duplicates
+    setConversations(prev => prev.filter(c => c.messages.length > 0));
+    
+    // Then create a new one
     return await createNewConversation();
   };
 
