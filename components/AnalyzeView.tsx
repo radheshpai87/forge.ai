@@ -83,6 +83,15 @@ const AnalyzeView: React.FC<AnalyzeViewProps> = ({ setResponse, initialProblem, 
     }
   }, [currentConversation?.id]);
 
+  // Clear currentResponse when switching to a fresh, empty conversation
+  useEffect(() => {
+    if (currentConversation && currentConversation.messages.length === 0) {
+      setCurrentResponse(null);
+      setUserInput('');
+      setError(null);
+    }
+  }, [currentConversation?.id]);
+
   const seedChatWithAnalysis = useCallback(async (problem: string, analysis: UserDrivenResponse) => {
     const newConv = await createNewConversation();
     
