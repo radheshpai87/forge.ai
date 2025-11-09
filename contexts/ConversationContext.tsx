@@ -77,46 +77,50 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
 
   const startFreshConversation = async (): Promise<Conversation | null> => {
     // This is specifically for the "New Conversation" button - creates a truly fresh conversation
-    // Do both filtering and creating in a SINGLE atomic state update to avoid race conditions
-    const newConversation: Conversation = {
-      id: `local-${Date.now()}`,
-      title: 'New Conversation',
-      messages: [],
-      createdAt: Date.now(),
-    };
+    // Mark that we're creating a conversation to make the update idempotent for React Strict Mode
+    const timestamp = Date.now();
+    freshConversationIdRef.current = `local-${timestamp}`;
     
-    console.log('startFreshConversation: Creating conversation with ID:', newConversation.id);
+    console.log('startFreshConversation: Initiating conversation creation');
     
-    // Store the ID to prevent React Strict Mode from creating duplicates
-    if (freshConversationIdRef.current === newConversation.id) {
-      console.log('startFreshConversation: Duplicate call detected, skipping');
-      return currentConversation;
-    }
-    freshConversationIdRef.current = newConversation.id;
+    let createdConversation: Conversation | null = null;
     
     setConversations(prev => {
-      console.log('startFreshConversation: Conversations before:', prev.length);
-      // Check if this exact conversation already exists (React Strict Mode protection)
-      if (prev.some(c => c.id === newConversation.id)) {
-        console.log('startFreshConversation: Conversation already exists, skipping duplicate');
+      // If ref was already cleared, this is React Strict Mode's second call - return unchanged
+      if (!freshConversationIdRef.current) {
+        console.log('startFreshConversation: Ref already cleared (Strict Mode duplicate), skipping');
         return prev;
       }
-      // Filter out empty conversations AND add the new one in a single operation
+      
+      // Build the new conversation INSIDE the updater
+      const newConversation: Conversation = {
+        id: freshConversationIdRef.current,
+        title: 'New Conversation',
+        messages: [],
+        createdAt: timestamp,
+      };
+      
+      console.log('startFreshConversation: Creating conversation with ID:', newConversation.id);
+      
+      // Filter out empty conversations and add the new one
       const filtered = prev.filter(c => c.messages.length > 0);
-      console.log('startFreshConversation: After filtering:', filtered.length);
-      const updated = [newConversation, ...filtered];
-      console.log('startFreshConversation: After adding new:', updated.length);
-      return updated;
+      console.log('startFreshConversation: Filtered:', filtered.length, '→ Adding new → Total:', filtered.length + 1);
+      
+      // Store for setCurrentConversation below
+      createdConversation = newConversation;
+      
+      // CRITICAL: Clear the ref INSIDE the updater so Strict Mode's second call becomes a no-op
+      freshConversationIdRef.current = null;
+      
+      return [newConversation, ...filtered];
     });
     
-    setCurrentConversation(newConversation);
+    if (createdConversation) {
+      setCurrentConversation(createdConversation);
+      return createdConversation;
+    }
     
-    // Clear the ref after a short delay
-    setTimeout(() => {
-      freshConversationIdRef.current = null;
-    }, 100);
-    
-    return newConversation;
+    return currentConversation;
   };
 
   const addMessage = async (role: 'user' | 'assistant', content: string, conversationId?: string) => {
