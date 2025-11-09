@@ -21,6 +21,7 @@ interface ConversationContextType {
   currentConversation: Conversation | null;
   addMessage: (role: 'user' | 'assistant', content: string, conversationId?: string) => Promise<void>;
   createNewConversation: () => Promise<Conversation | null>;
+  startFreshConversation: () => Promise<Conversation | null>;
   switchConversation: (conversationId: string) => void;
   deleteConversation: (conversationId: string) => Promise<void>;
   clearCurrentConversation: () => Promise<void>;
@@ -65,6 +66,11 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
       console.error('Failed to create conversation:', error);
       return null;
     }
+  };
+
+  const startFreshConversation = async (): Promise<Conversation | null> => {
+    // This is specifically for the "New Conversation" button - creates a truly fresh conversation
+    return await createNewConversation();
   };
 
   const addMessage = async (role: 'user' | 'assistant', content: string, conversationId?: string) => {
@@ -178,6 +184,7 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
     currentConversation,
     addMessage,
     createNewConversation,
+    startFreshConversation,
     switchConversation,
     deleteConversation,
     clearCurrentConversation,

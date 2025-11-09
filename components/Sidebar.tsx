@@ -48,7 +48,7 @@ const NavButton: React.FC<{
 const Sidebar: React.FC<SidebarProps> = ({ activeMode, onModeChange, theme, onThemeChange, isComposerEnabled }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, logout } = useAuth();
-  const { conversations, currentConversation, switchConversation, createNewConversation, deleteConversation } = useConversation();
+  const { conversations, currentConversation, switchConversation, startFreshConversation, deleteConversation } = useConversation();
 
   const handleNavClick = (mode: ViewMode) => {
     onModeChange(mode);
@@ -129,7 +129,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeMode, onModeChange, theme, onTh
                 </h2>
                 <button
                   onClick={() => {
-                    createNewConversation();
+                    startFreshConversation();
+                    onModeChange('analyze');
                     setIsMenuOpen(false);
                   }}
                   className="p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 transition-colors"
@@ -237,7 +238,10 @@ const Sidebar: React.FC<SidebarProps> = ({ activeMode, onModeChange, theme, onTh
               Chat History
             </h2>
             <button
-              onClick={createNewConversation}
+              onClick={() => {
+                startFreshConversation();
+                onModeChange('analyze');
+              }}
               className="p-1 rounded hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-400 transition-colors"
               title="New chat"
             >

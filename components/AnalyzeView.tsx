@@ -17,6 +17,7 @@ interface AnalyzeViewProps {
   profile: FounderProfile;
   setProfile: (profile: FounderProfile) => void;
   theme: Theme;
+  onNewConversation?: () => void;
 }
 
 const AnalysisChunkCard: React.FC<{ chunk: AnalysisChunk }> = ({ chunk }) => {
@@ -48,7 +49,7 @@ const AnalysisChunkCard: React.FC<{ chunk: AnalysisChunk }> = ({ chunk }) => {
   );
 };
 
-const AnalyzeView: React.FC<AnalyzeViewProps> = ({ setResponse, initialProblem, onProblemProcessed, profile, setProfile, theme }) => {
+const AnalyzeView: React.FC<AnalyzeViewProps> = ({ setResponse, initialProblem, onProblemProcessed, profile, setProfile, theme, onNewConversation }) => {
   const [activeTab, setActiveTab] = useState<'analyze' | 'history'>('analyze');
   const [userInput, setUserInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
