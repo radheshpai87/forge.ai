@@ -59,7 +59,13 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
         createdAt: Date.now(),
       };
       
-      setConversations(prev => [newConversation, ...prev]);
+      console.log('createNewConversation: Creating conversation with ID:', newConversation.id);
+      setConversations(prev => {
+        console.log('createNewConversation: Current conversations before adding:', prev.length);
+        const updated = [newConversation, ...prev];
+        console.log('createNewConversation: Conversations after adding:', updated.length);
+        return updated;
+      });
       setCurrentConversation(newConversation);
       return newConversation;
     } catch (error) {
@@ -71,9 +77,15 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
   const startFreshConversation = async (): Promise<Conversation | null> => {
     // This is specifically for the "New Conversation" button - creates a truly fresh conversation
     // First, remove any existing empty conversations to avoid duplicates
-    setConversations(prev => prev.filter(c => c.messages.length > 0));
+    setConversations(prev => {
+      console.log('Before filtering empty conversations:', prev.length);
+      const filtered = prev.filter(c => c.messages.length > 0);
+      console.log('After filtering empty conversations:', filtered.length);
+      return filtered;
+    });
     
     // Then create a new one
+    console.log('Creating new conversation from startFreshConversation');
     return await createNewConversation();
   };
 
