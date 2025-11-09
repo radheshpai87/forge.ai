@@ -11,7 +11,7 @@ import { ViewMode, Theme, UserDrivenResponse, ProactiveDiscoveryResponse, Founde
 
 const App: React.FC = () => {
   const { isAuthenticated } = useAuth();
-  const { startFreshConversation } = useConversation();
+  const { createConversation } = useConversation();
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
   const [viewMode, setViewMode] = useState<ViewMode>('analyze');
   const [theme, setTheme] = useState<Theme>('light');
@@ -55,43 +55,26 @@ const App: React.FC = () => {
     setViewMode('analyze');
   }, []);
 
-  const isCreatingConversation = React.useRef(false);
-  
-  const handleNewConversation = useCallback(async () => {
-    // Prevent duplicate calls
-    if (isCreatingConversation.current) {
-      console.log('Already creating conversation, skipping duplicate call');
-      return;
-    }
+  const handleNewConversation = useCallback(() => {
+    console.log('handleNewConversation: Creating new conversation');
     
-    isCreatingConversation.current = true;
-    console.log('handleNewConversation: Starting');
+    // Reset all analysis state
+    setAnalysisResponse(null);
+    setSelectedProblem(null);
     
-    try {
-      // Reset all analysis state first
-      setAnalysisResponse(null);
-      setSelectedProblem(null);
-      
-      // Then create a new conversation
-      await startFreshConversation();
-      
-      // Switch to analyze mode
-      setViewMode('analyze');
-    } finally {
-      // Reset the flag after a small delay to allow state to settle
-      setTimeout(() => {
-        isCreatingConversation.current = false;
-        console.log('handleNewConversation: Ready for next call');
-      }, 500);
-    }
-  }, [startFreshConversation]);
+    // Create a new conversation
+    createConversation();
+    
+    // Switch to analyze mode
+    setViewMode('analyze');
+  }, [createConversation]);
 
   const renderView = () => {
     switch (viewMode) {
       case 'analyze':
         return <AnalyzeView setResponse={setAnalysisResponse} initialProblem={selectedProblem} onProblemProcessed={() => setSelectedProblem(null)} profile={founderProfile} setProfile={setFounderProfile} theme={theme} />;
       case 'discover':
-        return <DiscoverView setResponse={setDiscoveryResponse} onProblemSelect={handleProblemSelect} profile={founderProfile} setProfile={setFounderProfile} />;
+        return <DiscoverView setResponse={setDiscoveryResponse} onProblemSelect={handleProblemSelect} />;
       case 'compose':
         return <ComposerView analysis={analysisResponse} opportunities={discoveryResponse?.problems || []} />;
       default:
