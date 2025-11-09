@@ -71,6 +71,17 @@ const AnalyzeView: React.FC<AnalyzeViewProps> = ({ setResponse, initialProblem, 
     scrollToBottom();
   }, [currentConversation?.messages]);
 
+  // Auto-switch to history tab when a conversation is selected from sidebar
+  useEffect(() => {
+    if (currentConversation && currentConversation.messages.length > 0 && activeTab !== 'history') {
+      // Only switch if this isn't a brand new conversation we just created
+      const isNewConversation = currentConversation.messages.length <= 2;
+      if (!isNewConversation || !isLoading) {
+        setActiveTab('history');
+      }
+    }
+  }, [currentConversation?.id]);
+
   const seedChatWithAnalysis = useCallback(async (problem: string, analysis: UserDrivenResponse) => {
     const newConv = await createNewConversation();
     
@@ -396,28 +407,46 @@ const AnalyzeView: React.FC<AnalyzeViewProps> = ({ setResponse, initialProblem, 
 
       {activeTab === 'history' && (
         <div className="flex-1 overflow-y-auto">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Conversation History</h3>
-          {conversations.length === 0 ? (
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            {currentConversation ? currentConversation.title : 'Conversation History'}
+          </h3>
+          {!currentConversation || currentConversation.messages.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-600 dark:text-gray-400">No analysis history yet. Start analyzing problems to build your history!</p>
+              <p className="text-gray-600 dark:text-gray-400">
+                {conversations.length === 0 
+                  ? 'No analysis history yet. Start analyzing problems to build your history!' 
+                  : 'Select a conversation from the sidebar to view its messages'}
+              </p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {conversations.map((conv) => (
+            <div className="space-y-6 pb-6">
+              {currentConversation.messages.map((message: Message) => (
                 <div
-                  key={conv.id}
-                  className="w-full text-left px-4 py-3 rounded-lg bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white"
+                  key={message.id}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">
-                        {conv.messages[0]?.content.substring(0, 60) || 'Analysis'}
-                        {conv.messages[0]?.content.length > 60 ? '...' : ''}
-                      </p>
-                      <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">
-                        {conv.messages.length} message{conv.messages.length !== 1 ? 's' : ''} • {new Date(conv.createdAt).toLocaleDateString()}
-                      </p>
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                      message.role === 'user'
+                        ? 'bg-gray-900 dark:bg-white text-white dark:text-black'
+                        : 'bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-semibold opacity-70">
+                        {message.role === 'user' ? 'You' : 'Forge AI'}
+                      </span>
+                      <span className="text-xs opacity-50">
+                        {new Date(message.timestamp).toLocaleTimeString()}
+                      </span>
                     </div>
+                    {message.role === 'assistant' ? (
+                      <div className="prose dark:prose-invert max-w-none">
+                        <MarkdownRenderer content={message.content} />
+                      </div>
+                    ) : (
+                      <p className="whitespace-pre-wrap">{message.content}</p>
+                    )}
                   </div>
                 </div>
               ))}
