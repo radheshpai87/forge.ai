@@ -47,6 +47,7 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const freshConversationIdRef = React.useRef<string | null>(null);
 
   const createNewConversation = async (): Promise<Conversation | null> => {
     try {
@@ -86,8 +87,20 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
     
     console.log('startFreshConversation: Creating conversation with ID:', newConversation.id);
     
+    // Store the ID to prevent React Strict Mode from creating duplicates
+    if (freshConversationIdRef.current === newConversation.id) {
+      console.log('startFreshConversation: Duplicate call detected, skipping');
+      return currentConversation;
+    }
+    freshConversationIdRef.current = newConversation.id;
+    
     setConversations(prev => {
       console.log('startFreshConversation: Conversations before:', prev.length);
+      // Check if this exact conversation already exists (React Strict Mode protection)
+      if (prev.some(c => c.id === newConversation.id)) {
+        console.log('startFreshConversation: Conversation already exists, skipping duplicate');
+        return prev;
+      }
       // Filter out empty conversations AND add the new one in a single operation
       const filtered = prev.filter(c => c.messages.length > 0);
       console.log('startFreshConversation: After filtering:', filtered.length);
@@ -97,6 +110,12 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
     });
     
     setCurrentConversation(newConversation);
+    
+    // Clear the ref after a short delay
+    setTimeout(() => {
+      freshConversationIdRef.current = null;
+    }, 100);
+    
     return newConversation;
   };
 
