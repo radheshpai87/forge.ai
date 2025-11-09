@@ -76,17 +76,28 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
 
   const startFreshConversation = async (): Promise<Conversation | null> => {
     // This is specifically for the "New Conversation" button - creates a truly fresh conversation
-    // First, remove any existing empty conversations to avoid duplicates
+    // Do both filtering and creating in a SINGLE atomic state update to avoid race conditions
+    const newConversation: Conversation = {
+      id: `local-${Date.now()}`,
+      title: 'New Conversation',
+      messages: [],
+      createdAt: Date.now(),
+    };
+    
+    console.log('startFreshConversation: Creating conversation with ID:', newConversation.id);
+    
     setConversations(prev => {
-      console.log('Before filtering empty conversations:', prev.length);
+      console.log('startFreshConversation: Conversations before:', prev.length);
+      // Filter out empty conversations AND add the new one in a single operation
       const filtered = prev.filter(c => c.messages.length > 0);
-      console.log('After filtering empty conversations:', filtered.length);
-      return filtered;
+      console.log('startFreshConversation: After filtering:', filtered.length);
+      const updated = [newConversation, ...filtered];
+      console.log('startFreshConversation: After adding new:', updated.length);
+      return updated;
     });
     
-    // Then create a new one
-    console.log('Creating new conversation from startFreshConversation');
-    return await createNewConversation();
+    setCurrentConversation(newConversation);
+    return newConversation;
   };
 
   const addMessage = async (role: 'user' | 'assistant', content: string, conversationId?: string) => {
