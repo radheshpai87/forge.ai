@@ -55,16 +55,35 @@ const App: React.FC = () => {
     setViewMode('analyze');
   }, []);
 
+  const isCreatingConversation = React.useRef(false);
+  
   const handleNewConversation = useCallback(async () => {
-    // Reset all analysis state first
-    setAnalysisResponse(null);
-    setSelectedProblem(null);
+    // Prevent duplicate calls
+    if (isCreatingConversation.current) {
+      console.log('Already creating conversation, skipping duplicate call');
+      return;
+    }
     
-    // Then create a new conversation
-    await startFreshConversation();
+    isCreatingConversation.current = true;
+    console.log('handleNewConversation: Starting');
     
-    // Switch to analyze mode
-    setViewMode('analyze');
+    try {
+      // Reset all analysis state first
+      setAnalysisResponse(null);
+      setSelectedProblem(null);
+      
+      // Then create a new conversation
+      await startFreshConversation();
+      
+      // Switch to analyze mode
+      setViewMode('analyze');
+    } finally {
+      // Reset the flag after a small delay to allow state to settle
+      setTimeout(() => {
+        isCreatingConversation.current = false;
+        console.log('handleNewConversation: Ready for next call');
+      }, 500);
+    }
   }, [startFreshConversation]);
 
   const renderView = () => {
