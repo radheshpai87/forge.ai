@@ -73,22 +73,12 @@ const AnalyzeView: React.FC<AnalyzeViewProps> = ({ setResponse, initialProblem, 
   }, [currentConversation?.messages]);
 
   // Auto-switch to history tab when a conversation is selected from sidebar
-  // AND clear analysis when switching to a new empty conversation
   useEffect(() => {
-    if (currentConversation) {
-      if (currentConversation.messages.length === 0) {
-        // New empty conversation - clear everything
-        setCurrentResponse(null);
-        setResponse(null);
-        setUserInput('');
-        setError(null);
-        setActiveTab('analyze');
-      } else if (currentConversation.messages.length > 0 && activeTab !== 'history') {
-        // Existing conversation with messages - switch to history
-        const isNewConversation = currentConversation.messages.length <= 2;
-        if (!isNewConversation || !isLoading) {
-          setActiveTab('history');
-        }
+    if (currentConversation && currentConversation.messages.length > 0 && activeTab !== 'history') {
+      // Only switch if this isn't a brand new conversation we just created
+      const isNewConversation = currentConversation.messages.length <= 2;
+      if (!isNewConversation || !isLoading) {
+        setActiveTab('history');
       }
     }
   }, [currentConversation?.id]);
