@@ -17,8 +17,8 @@ export interface Conversation {
 interface ConversationContextType {
   conversations: Conversation[];
   currentConversation: Conversation | null;
-  addMessage: (role: 'user' | 'assistant', content: string) => void;
-  createConversation: () => void;
+  addMessage: (role: 'user' | 'assistant', content: string) => Conversation;
+  createConversation: () => Conversation;
   switchConversation: (conversationId: string) => void;
   deleteConversation: (conversationId: string) => void;
 }
@@ -53,7 +53,7 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
     setCurrentConversation(initialConversation);
   }, []);
 
-  // Create a new empty conversation
+  // Create a new empty conversation and return it immediately
   const createConversation = useCallback(() => {
     // Filter out any empty conversations first
     const conversationsWithMessages = conversations.filter(c => c.messages.length > 0);
@@ -69,13 +69,16 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
     // Update state
     setConversations([newConversation, ...conversationsWithMessages]);
     setCurrentConversation(newConversation);
+    
+    // Return the new conversation immediately for synchronous access
+    return newConversation;
   }, [conversations]);
 
-  // Add a message to the current conversation
+  // Add a message to the current conversation and return the updated conversation
   const addMessage = useCallback((role: 'user' | 'assistant', content: string) => {
     if (!currentConversation) {
       console.error('No current conversation to add message to');
-      return;
+      throw new Error('No current conversation available');
     }
 
     const newMessage: Message = {
@@ -102,6 +105,9 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
 
     // Update current conversation
     setCurrentConversation(updatedConversation);
+    
+    // Return the updated conversation immediately for synchronous access
+    return updatedConversation;
   }, [currentConversation]);
 
   // Switch to a different conversation

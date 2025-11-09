@@ -94,35 +94,29 @@ const AnalyzeView: React.FC<AnalyzeViewProps> = ({ setResponse, initialProblem, 
     }
   }, [currentConversation?.id]);
 
-  const seedChatWithAnalysis = useCallback(async (problem: string, analysis: UserDrivenResponse) => {
+  const seedChatWithAnalysis = useCallback((problem: string, analysis: UserDrivenResponse) => {
     if (!currentConversation) {
       console.error('No current conversation available');
       return;
     }
 
     // If current conversation has messages, create a new one
+    let targetConv = currentConversation;
     if (currentConversation.messages.length > 0) {
-      createConversation();
-      // Wait for state to update
-      await new Promise(resolve => setTimeout(resolve, 150));
+      targetConv = createConversation();
     }
-    
-    // Add user message with the problem
-    addMessage('user', problem);
     
     // Build analysis text
     const analysisText = `# Analysis Complete\n\n## Problem Statement\n${problem}\n\n## Analysis Results\n\n${analysis.chunks.map(chunk => 
       `### ${chunk.title}\n${chunk.analysis}\n\n**Key Insights:**\n${chunk.key_insights.map(insight => `- ${insight}`).join('\n')}`
     ).join('\n\n')}\n\n## Solution Guide\n${analysis.synthesis.solution_guide.map((step, idx) => `${idx + 1}. ${step}`).join('\n')}`;
     
-    // Wait a bit for the user message to be added
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Add user message with the problem - get updated conversation back
+    const convWithUserMsg = addMessage('user', problem);
     
-    // Add assistant message with the analysis
+    // Add assistant message with the analysis using the updated conversation
+    // This ensures we're working with the latest state
     addMessage('assistant', analysisText);
-    
-    // Wait for final state update
-    await new Promise(resolve => setTimeout(resolve, 100));
   }, [currentConversation, createConversation, addMessage]);
 
   React.useEffect(() => {
@@ -197,25 +191,22 @@ const AnalyzeView: React.FC<AnalyzeViewProps> = ({ setResponse, initialProblem, 
     setIsChatLoading(true);
 
     try {
-      await addMessage('user', userMessage);
-
-      // Wait a moment for state to update
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Add user message and get the updated conversation back immediately
+      const conversationWithUserMessage = addMessage('user', userMessage);
       
-      // Re-fetch the current conversation to get the updated messages
-      const updatedConv = currentConversation;
-      
-      const history: GeminiChatMessage[] = [
-        ...(updatedConv?.messages.map(msg => ({
-          role: msg.role === 'user' ? ('user' as const) : ('model' as const),
-          parts: msg.content
-        })) || [])
-      ];
+      // Build chat history from the updated conversation (includes the new user message)
+      const history: GeminiChatMessage[] = conversationWithUserMessage.messages.map(msg => ({
+        role: msg.role === 'user' ? ('user' as const) : ('model' as const),
+        parts: msg.content
+      }));
 
+      // Call Gemini with the complete history including the latest user message
       const response = await chat(userMessage, history);
-      await addMessage('assistant', response);
+      
+      // Add assistant response
+      addMessage('assistant', response);
     } catch (error: any) {
-      await addMessage('assistant', `Sorry, I encountered an error: ${error.message}`);
+      addMessage('assistant', `Sorry, I encountered an error: ${error.message}`);
     } finally {
       setIsChatLoading(false);
       chatInputRef.current?.focus();
