@@ -84,26 +84,31 @@ const AnalyzeView: React.FC<AnalyzeViewProps> = ({ setResponse, initialProblem, 
   }, [currentConversation?.id]);
 
   const seedChatWithAnalysis = useCallback(async (problem: string, analysis: UserDrivenResponse) => {
-    const newConv = await createNewConversation();
+    // Use the current conversation if it's empty, otherwise create a new one
+    let targetConv = currentConversation;
     
-    if (!newConv) {
-      return;
+    if (!targetConv || targetConv.messages.length > 0) {
+      // Only create a new conversation if there isn't one or if the current one has messages
+      targetConv = await createNewConversation();
+      if (!targetConv) {
+        return;
+      }
     }
     
     // Add a small delay to ensure React state updates have completed
     await new Promise(resolve => setTimeout(resolve, 100));
     
-    await addMessage('user', problem, newConv.id);
+    await addMessage('user', problem, targetConv.id);
     
     const analysisText = `# Analysis Complete\n\n## Problem Statement\n${problem}\n\n## Analysis Results\n\n${analysis.chunks.map(chunk => 
       `### ${chunk.title}\n${chunk.analysis}\n\n**Key Insights:**\n${chunk.key_insights.map(insight => `- ${insight}`).join('\n')}`
     ).join('\n\n')}\n\n## Solution Guide\n${analysis.synthesis.solution_guide.map((step, idx) => `${idx + 1}. ${step}`).join('\n')}`;
     
-    await addMessage('assistant', analysisText, newConv.id);
+    await addMessage('assistant', analysisText, targetConv.id);
     
     // Add another delay to ensure the conversation state is fully updated
     await new Promise(resolve => setTimeout(resolve, 100));
-  }, [createNewConversation, addMessage]);
+  }, [currentConversation, createNewConversation, addMessage]);
 
   React.useEffect(() => {
     if (initialProblem) {
