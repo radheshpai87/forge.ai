@@ -106,10 +106,9 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
       prev.map(c => c.id === conversationToUpdate.id ? updatedConversation : c)
     );
 
-    // Update current conversation if we modified it
-    if (!targetConversation || conversationToUpdate.id === currentConversation?.id) {
-      setCurrentConversation(updatedConversation);
-    }
+    // Always update currentConversation to keep state in sync
+    // This ensures UI reflects the latest changes even when using targetConversation
+    setCurrentConversation(updatedConversation);
     
     // Return the updated conversation immediately for synchronous access
     return updatedConversation;
