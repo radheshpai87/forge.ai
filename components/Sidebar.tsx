@@ -142,7 +142,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeMode, onModeChange, theme, onTh
                 </button>
               </div>
               <div className="space-y-1">
-                {conversations.map((conversation) => (
+                {conversations.filter(conv => conv.messages.length > 0).map((conversation) => (
                   <div
                     key={conversation.id}
                     className={`group relative flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all duration-200 ${
@@ -248,7 +248,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeMode, onModeChange, theme, onTh
             </button>
           </div>
           <div className="space-y-1">
-            {conversations.map((conversation) => (
+            {conversations.filter(conv => conv.messages.length > 0).map((conversation) => (
               <div
                 key={conversation.id}
                 className={`group relative flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all duration-200 ${
