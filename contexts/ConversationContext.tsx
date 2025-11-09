@@ -81,11 +81,13 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
       // Use callback-based state updates to ensure we work with latest state
       setConversations(prev => {
         // Find the target conversation in the current state
+        // If conversationId is provided, use it. Otherwise, use the first conversation (most recent)
         let targetConv = conversationId 
           ? prev.find(c => c.id === conversationId)
-          : prev.find(c => c.id === currentConversation?.id);
+          : prev[0]; // Use the most recent conversation
         
         if (!targetConv) {
+          console.error('No conversation found to add message to');
           return prev;
         }
 
@@ -102,10 +104,11 @@ export const ConversationProvider: React.FC<ConversationProviderProps> = ({ chil
         // Update currentConversation to the updated version
         setCurrentConversation(updatedConversation);
 
-        // Update the conversation in the array
-        return prev.map(conv => 
-          conv.id === updatedConversation.id ? updatedConversation : conv
-        );
+        // Move the conversation to the top of the list and update it
+        return [
+          updatedConversation,
+          ...prev.filter(conv => conv.id !== updatedConversation.id)
+        ];
       });
     } catch (error) {
       console.error('Failed to add message:', error);
