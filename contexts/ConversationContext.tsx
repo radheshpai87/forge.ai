@@ -1,6 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useAuth } from './AuthContext';
-import { conversationAPI, Conversation as APIConversation, Message as APIMessage } from '../services/apiService';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 
 export interface Message {
   id: string;
@@ -19,13 +17,10 @@ export interface Conversation {
 interface ConversationContextType {
   conversations: Conversation[];
   currentConversation: Conversation | null;
-  addMessage: (role: 'user' | 'assistant', content: string, conversationId?: string) => Promise<void>;
-  createNewConversation: () => Promise<Conversation | null>;
-  startFreshConversation: () => Promise<Conversation | null>;
+  addMessage: (role: 'user' | 'assistant', content: string) => void;
+  createConversation: () => void;
   switchConversation: (conversationId: string) => void;
-  deleteConversation: (conversationId: string) => Promise<void>;
-  clearCurrentConversation: () => Promise<void>;
-  isLoading: boolean;
+  deleteConversation: (conversationId: string) => void;
 }
 
 const ConversationContext = createContext<ConversationContextType | undefined>(undefined);
@@ -43,202 +38,113 @@ interface ConversationProviderProps {
 }
 
 export const ConversationProvider: React.FC<ConversationProviderProps> = ({ children }) => {
-  const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const freshConversationIdRef = React.useRef<string | null>(null);
 
-  const createNewConversation = async (): Promise<Conversation | null> => {
-    try {
-      // Always create conversation locally for now
-      // TODO: Add proper auth token validation and database persistence
-      const newConversation: Conversation = {
-        id: `local-${Date.now()}`,
-        title: 'New Conversation',
-        messages: [],
-        createdAt: Date.now(),
-      };
-      
-      console.log('createNewConversation: Creating conversation with ID:', newConversation.id);
-      setConversations(prev => {
-        console.log('createNewConversation: Current conversations before adding:', prev.length);
-        const updated = [newConversation, ...prev];
-        console.log('createNewConversation: Conversations after adding:', updated.length);
-        return updated;
-      });
-      setCurrentConversation(newConversation);
-      return newConversation;
-    } catch (error) {
-      console.error('Failed to create conversation:', error);
-      return null;
+  // Initialize with one empty conversation on mount
+  useEffect(() => {
+    const initialConversation: Conversation = {
+      id: `conv-${Date.now()}`,
+      title: 'New Conversation',
+      messages: [],
+      createdAt: Date.now(),
+    };
+    setConversations([initialConversation]);
+    setCurrentConversation(initialConversation);
+  }, []);
+
+  // Create a new empty conversation
+  const createConversation = useCallback(() => {
+    // Filter out any empty conversations first
+    const conversationsWithMessages = conversations.filter(c => c.messages.length > 0);
+    
+    // Create new conversation
+    const newConversation: Conversation = {
+      id: `conv-${Date.now()}`,
+      title: 'New Conversation',
+      messages: [],
+      createdAt: Date.now(),
+    };
+    
+    // Update state
+    setConversations([newConversation, ...conversationsWithMessages]);
+    setCurrentConversation(newConversation);
+  }, [conversations]);
+
+  // Add a message to the current conversation
+  const addMessage = useCallback((role: 'user' | 'assistant', content: string) => {
+    if (!currentConversation) {
+      console.error('No current conversation to add message to');
+      return;
     }
-  };
 
-  const startFreshConversation = async (): Promise<Conversation | null> => {
-    // This is specifically for the "New Conversation" button - creates a truly fresh conversation
-    // Mark that we're creating a conversation to make the update idempotent for React Strict Mode
-    const timestamp = Date.now();
-    freshConversationIdRef.current = `local-${timestamp}`;
-    
-    console.log('startFreshConversation: Initiating conversation creation');
-    
-    let createdConversation: Conversation | null = null;
-    
-    setConversations(prev => {
-      // If ref was already cleared, this is React Strict Mode's second call - return unchanged
-      if (!freshConversationIdRef.current) {
-        console.log('startFreshConversation: Ref already cleared (Strict Mode duplicate), skipping');
-        return prev;
-      }
-      
-      // Build the new conversation INSIDE the updater
-      const newConversation: Conversation = {
-        id: freshConversationIdRef.current,
-        title: 'New Conversation',
-        messages: [],
-        createdAt: timestamp,
-      };
-      
-      console.log('startFreshConversation: Creating conversation with ID:', newConversation.id);
-      
-      // Filter out empty conversations and add the new one
-      const filtered = prev.filter(c => c.messages.length > 0);
-      console.log('startFreshConversation: Filtered:', filtered.length, '→ Adding new → Total:', filtered.length + 1);
-      
-      // Store for setCurrentConversation below
-      createdConversation = newConversation;
-      
-      // CRITICAL: Clear the ref INSIDE the updater so Strict Mode's second call becomes a no-op
-      freshConversationIdRef.current = null;
-      
-      return [newConversation, ...filtered];
-    });
-    
-    if (createdConversation) {
-      setCurrentConversation(createdConversation);
-      return createdConversation;
-    }
-    
-    return currentConversation;
-  };
+    const newMessage: Message = {
+      id: `msg-${Date.now()}-${Math.random()}`,
+      role,
+      content,
+      timestamp: Date.now(),
+    };
 
-  const addMessage = async (role: 'user' | 'assistant', content: string, conversationId?: string) => {
-    try {
-      // Always create messages locally for now
-      // TODO: Add proper auth token validation and database persistence
-      const newMessage: Message = {
-        id: `local-${Date.now()}-${Math.random()}`,
-        role,
-        content,
-        timestamp: Date.now(),
-      };
+    // Update the conversation with the new message
+    const updatedConversation: Conversation = {
+      ...currentConversation,
+      messages: [...currentConversation.messages, newMessage],
+      // Update title based on first user message
+      title: currentConversation.messages.length === 0 && role === 'user'
+        ? content.slice(0, 50) + (content.length > 50 ? '...' : '')
+        : currentConversation.title,
+    };
 
-      // Use callback-based state updates to ensure we work with latest state
-      setConversations(prev => {
-        // Find the target conversation in the current state
-        // If conversationId is provided, use it. Otherwise, use the first conversation (most recent)
-        let targetConv = conversationId 
-          ? prev.find(c => c.id === conversationId)
-          : prev[0]; // Use the most recent conversation
-        
-        if (!targetConv) {
-          console.error('No conversation found to add message to');
-          return prev;
-        }
+    // Update conversations list
+    setConversations(prev => 
+      prev.map(c => c.id === currentConversation.id ? updatedConversation : c)
+    );
 
-        const updatedTitle = targetConv.messages.length === 0 && role === 'user' 
-          ? content.slice(0, 50) + (content.length > 50 ? '...' : '')
-          : targetConv.title;
+    // Update current conversation
+    setCurrentConversation(updatedConversation);
+  }, [currentConversation]);
 
-        const updatedConversation = {
-          ...targetConv,
-          messages: [...targetConv.messages, newMessage],
-          title: updatedTitle,
-        };
-
-        // Update currentConversation to the updated version
-        setCurrentConversation(updatedConversation);
-
-        // Move the conversation to the top of the list and update it
-        return [
-          updatedConversation,
-          ...prev.filter(conv => conv.id !== updatedConversation.id)
-        ];
-      });
-    } catch (error) {
-      console.error('Failed to add message:', error);
-      throw error;
-    }
-  };
-
-  const switchConversation = (conversationId: string) => {
+  // Switch to a different conversation
+  const switchConversation = useCallback((conversationId: string) => {
     const conversation = conversations.find(c => c.id === conversationId);
     if (conversation) {
       setCurrentConversation(conversation);
     }
-  };
+  }, [conversations]);
 
-  const deleteConversation = async (conversationId: string) => {
-    try {
-      // Always delete locally for now
-      // TODO: Add proper auth token validation and database persistence
-      setConversations(prev => prev.filter(c => c.id !== conversationId));
-      if (currentConversation?.id === conversationId) {
-        const remaining = conversations.filter(c => c.id !== conversationId);
-        if (remaining.length > 0) {
-          setCurrentConversation(remaining[0]);
-        } else {
-          await createNewConversation();
-        }
-      }
-    } catch (error) {
-      console.error('Failed to delete conversation:', error);
-    }
-  };
-
-  const clearCurrentConversation = async () => {
-    if (!currentConversation) return;
-
-    try {
-      // Always clear locally for now
-      // TODO: Add proper auth token validation and database persistence
-      await createNewConversation();
-    } catch (error) {
-      console.error('Failed to clear conversation:', error);
-    }
-  };
-
-  useEffect(() => {
-    const loadConversations = async () => {
-      // Always create a local conversation first
-      const localConversation: Conversation = {
-        id: `local-${Date.now()}`,
-        title: 'New Conversation',
-        messages: [],
-        createdAt: Date.now(),
-      };
-      setConversations([localConversation]);
-      setCurrentConversation(localConversation);
+  // Delete a conversation
+  const deleteConversation = useCallback((conversationId: string) => {
+    const updatedConversations = conversations.filter(c => c.id !== conversationId);
+    
+    setConversations(updatedConversations);
+    
+    // If we deleted the current conversation, switch to another or create new
+    if (currentConversation?.id === conversationId) {
+      const conversationsWithMessages = updatedConversations.filter(c => c.messages.length > 0);
       
-      // Only try to load from database if user is authenticated
-      // For now, we'll skip database loading entirely to avoid 401 errors
-      // TODO: Implement proper auth token validation before making API calls
-    };
-
-    loadConversations();
-  }, []);
+      if (conversationsWithMessages.length > 0) {
+        setCurrentConversation(conversationsWithMessages[0]);
+      } else {
+        // Create a new empty conversation
+        const newConversation: Conversation = {
+          id: `conv-${Date.now()}`,
+          title: 'New Conversation',
+          messages: [],
+          createdAt: Date.now(),
+        };
+        setConversations([newConversation]);
+        setCurrentConversation(newConversation);
+      }
+    }
+  }, [conversations, currentConversation]);
 
   const value = {
     conversations,
     currentConversation,
     addMessage,
-    createNewConversation,
-    startFreshConversation,
+    createConversation,
     switchConversation,
     deleteConversation,
-    clearCurrentConversation,
-    isLoading,
   };
 
   return <ConversationContext.Provider value={value}>{children}</ConversationContext.Provider>;
