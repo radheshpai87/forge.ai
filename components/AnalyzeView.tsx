@@ -72,6 +72,17 @@ const AnalyzeView: React.FC<AnalyzeViewProps> = ({ setResponse, initialProblem, 
     scrollToBottom();
   }, [currentConversation?.messages]);
 
+  // Clear the analysis display when switching to an empty conversation
+  useEffect(() => {
+    if (currentConversation && currentConversation.messages.length === 0) {
+      console.log('Switching to empty conversation, clearing analysis display');
+      setCurrentResponse(null);
+      setUserInput('');
+      setError(null);
+      setActiveTab('analyze');
+    }
+  }, [currentConversation?.id]);
+
   // Auto-switch to history tab when a conversation is selected from sidebar
   useEffect(() => {
     if (currentConversation && currentConversation.messages.length > 0 && activeTab !== 'history') {
